@@ -7,4 +7,4 @@ services:
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: mysecretpassword
-      POSTGRES_DB: local
+      POSTGRES_DB: svelte_elysia_auth
