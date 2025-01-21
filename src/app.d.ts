@@ -23,6 +23,8 @@ declare global {
 					retry?: 'auto' | 'never';
 					'retry-interval'?: number;
 					domain?: string;
+					'expired-callback'?: () => void;
+					'timeout-callback'?: () => void;
 				}
 			) => number;
 			remove: (widgetId: number) => void;

@@ -20,23 +20,28 @@
       }
 
       const script = document.createElement('script');
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad';
+      // Remove render=explicit to let Turnstile handle its own resource loading
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
       script.async = true;
-      script.defer = true;
+      
+      // Add proper resource hints
+      const preconnect = document.createElement('link');
+      preconnect.rel = 'preconnect';
+      preconnect.href = 'https://challenges.cloudflare.com';
+      document.head.appendChild(preconnect);
 
-      // Define global callback
-      (window as any).onTurnstileLoad = () => {
+      script.onload = () => {
         loaded = true;
         resolve();
       };
       
-      script.addEventListener('error', () => {
+      script.onerror = () => {
         console.error('Failed to load Turnstile script');
         if (retryCount < MAX_RETRIES) {
           retryCount++;
           setTimeout(() => loadTurnstile(), 1000 * retryCount);
         }
-      });
+      };
       
       document.head.appendChild(script);
     });
@@ -46,17 +51,22 @@
     if (!browser || !loaded || !widget || !window.turnstile) return;
 
     try {
+      // Reset existing widget if any
+      if (widgetId) {
+        window.turnstile.remove(widgetId);
+      }
+
       // Render widget
       widgetId = window.turnstile.render(widget, {
         sitekey: PUBLIC_TURNSTILE_SITE_KEY,
-        callback: (token: string) => {
-          onVerify(token);
-        },
+        callback: onVerify,
         'error-callback': () => {
-          // Reset on error
-          if (widgetId) {
-            window.turnstile?.reset(widgetId);
-          }
+          console.log('Turnstile encountered an error');
+          if (widgetId) window.turnstile?.reset(widgetId);
+        },
+        'expired-callback': () => {
+          console.log('Turnstile expired');
+          if (widgetId) window.turnstile?.reset(widgetId);
         },
         'refresh-expired': 'auto',
         theme: 'light',
@@ -68,7 +78,6 @@
       });
     } catch (e) {
       console.error('Failed to initialize Turnstile:', e);
-      // Retry initialization
       if (retryCount < MAX_RETRIES) {
         retryCount++;
         setTimeout(initTurnstile, 1000 * retryCount);
@@ -99,6 +108,12 @@
     }
   });
 </script>
+
+<svelte:head>
+  {#if browser}
+    <link rel="dns-prefetch" href="https://challenges.cloudflare.com">
+  {/if}
+</svelte:head>
 
 {#if loaded && mounted}
   <div bind:this={widget} class="turnstile-widget"></div>
