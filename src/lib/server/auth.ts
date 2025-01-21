@@ -70,7 +70,7 @@ export const authRouter = new Elysia({ prefix: '/auth' })
         } 
       };
     } catch (e) {
-      return error(400, 'Registration failed');
+      return error(400, `Registration failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
     }
   }, {
     body: t.Object({
