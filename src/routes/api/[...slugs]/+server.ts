@@ -1,8 +1,7 @@
 import { Elysia } from 'elysia';
 import { swagger } from '@elysiajs/swagger';
 import { PUBLIC_API_PATH } from '$env/static/public';
-// import { authRouter } from '$lib/server/auth';
-
+import { authRouter } from '$lib/server/auth';
 
 const app = new Elysia({ prefix: PUBLIC_API_PATH })
 	.onError(({ code, error }) => {
@@ -18,8 +17,8 @@ const app = new Elysia({ prefix: PUBLIC_API_PATH })
 		);
 	})
 	.use(await swagger())
+	.use(authRouter)
 	.get('/hi', () => 'Hi Elysia');
-	// .use(authRouter);
 
 export type App = typeof app;
 

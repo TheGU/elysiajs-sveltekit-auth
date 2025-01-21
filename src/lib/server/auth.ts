@@ -1,81 +1,104 @@
-import type { RequestEvent } from '@sveltejs/kit';
+import { Elysia, t } from 'elysia';
+import { jwt } from '@elysiajs/jwt';
+import { hash, verify } from '@node-rs/argon2';
+import { encodeBase32LowerCase } from '@oslojs/encoding';
 import { eq } from 'drizzle-orm';
-import { sha256 } from '@oslojs/crypto/sha2';
-import { encodeBase64url, encodeHexLowerCase } from '@oslojs/encoding';
-import { db } from '$lib/server/db';
-import * as table from '$lib/server/db/schema';
+import { JWT_SECRET } from '$env/static/private';
+import { db } from './db';
+import * as table from './db/schema';
 
-const DAY_IN_MS = 1000 * 60 * 60 * 24;
+export const authRouter = new Elysia({ prefix: '/auth' })
+  .use(
+    jwt({
+      name: 'jwt',
+      secret: JWT_SECRET,
+      exp: '30d' // 30 days expiry
+    })
+  )
+  .post('/login', async ({ body, jwt, error }) => {
+    const { username, password } = body;
 
-export const sessionCookieName = 'auth-session';
+    const results = await db.select().from(table.user).where(eq(table.user.username, username));
+    const user = results.at(0);
+    
+    if (!user) {
+      return error(401, 'Invalid credentials');
+    }
 
-export function generateSessionToken() {
-	const bytes = crypto.getRandomValues(new Uint8Array(18));
-	const token = encodeBase64url(bytes);
-	return token;
-}
+    const validPassword = await verify(user.passwordHash, password);
+    if (!validPassword) {
+      return error(401, 'Invalid credentials');
+    }
 
-export async function createSession(token: string, userId: string) {
-	const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
-	const session: table.Session = {
-		id: sessionId,
-		userId,
-		expiresAt: new Date(Date.now() + DAY_IN_MS * 30)
-	};
-	await db.insert(table.session).values(session);
-	return session;
-}
+    const token = await jwt.sign({
+      userId: user.id,
+      username: user.username
+    });
 
-export async function validateSessionToken(token: string) {
-	const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
-	const [result] = await db
-		.select({
-			// Adjust user table here to tweak returned data
-			user: { id: table.user.id, username: table.user.username },
-			session: table.session
-		})
-		.from(table.session)
-		.innerJoin(table.user, eq(table.session.userId, table.user.id))
-		.where(eq(table.session.id, sessionId));
+    return { 
+      token, 
+      user: { 
+        id: user.id, 
+        username: user.username 
+      } 
+    };
+  }, {
+    body: t.Object({
+      username: t.String(),
+      password: t.String()
+    })
+  })
+  .post('/register', async ({ body, jwt, error }) => {
+    const { username, password } = body;
 
-	if (!result) {
-		return { session: null, user: null };
-	}
-	const { session, user } = result;
+    const userId = generateUserId();
+    const passwordHash = await hash(password);
 
-	const sessionExpired = Date.now() >= session.expiresAt.getTime();
-	if (sessionExpired) {
-		await db.delete(table.session).where(eq(table.session.id, session.id));
-		return { session: null, user: null };
-	}
+    try {
+      await db.insert(table.user).values({ id: userId, username, passwordHash });
+      
+      const token = await jwt.sign({
+        userId,
+        username
+      });
 
-	const renewSession = Date.now() >= session.expiresAt.getTime() - DAY_IN_MS * 15;
-	if (renewSession) {
-		session.expiresAt = new Date(Date.now() + DAY_IN_MS * 30);
-		await db
-			.update(table.session)
-			.set({ expiresAt: session.expiresAt })
-			.where(eq(table.session.id, session.id));
-	}
+      return { 
+        token, 
+        user: { 
+          id: userId, 
+          username 
+        } 
+      };
+    } catch (e) {
+      return error(400, 'Registration failed');
+    }
+  }, {
+    body: t.Object({
+      username: t.String(),
+      password: t.String()
+    })
+  })
+  .get('/me', async ({ headers, jwt, error }) => {
+    const authHeader = headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return error(401, 'Unauthorized');
+    }
 
-	return { session, user };
-}
+    const token = authHeader.split(' ')[1];
+    const payload = await jwt.verify(token);
+    
+    if (!payload) {
+      return error(401, 'Invalid token');
+    }
 
-export type SessionValidationResult = Awaited<ReturnType<typeof validateSessionToken>>;
+    return {
+      id: payload.userId,
+      username: payload.username
+    };
+  });
 
-export async function invalidateSession(sessionId: string) {
-	await db.delete(table.session).where(eq(table.session.id, sessionId));
-}
-
-export function setSessionTokenCookie(event: RequestEvent, token: string, expiresAt: Date) {
-	event.cookies.set(sessionCookieName, token, {
-		expires: expiresAt,
-		path: '/'
-	});
-}
-
-export function deleteSessionTokenCookie(event: RequestEvent) {
-	event.cookies.delete(sessionCookieName, {
-		path: '/'
-	});
+function generateUserId() {
+  const bytes = crypto.getRandomValues(new Uint8Array(15));
+  const id = encodeBase32LowerCase(bytes);
+  return id;
 }
