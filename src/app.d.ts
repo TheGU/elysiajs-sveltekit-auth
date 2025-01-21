@@ -7,6 +7,26 @@ declare global {
 			session: import('$lib/server/auth').SessionValidationResult['session'];
 		}
 	}
+
+	interface Window {
+		turnstile?: {
+			render: (
+				element: HTMLElement,
+				options: {
+					sitekey: string;
+					callback?: (token: string) => void;
+					'refresh-expired'?: 'auto' | 'manual' | 'never';
+					theme?: 'light' | 'dark' | 'auto';
+					size?: 'normal' | 'compact' | 'invisible';
+					appearance?: 'always' | 'execute' | 'interaction-only';
+					retry?: 'auto' | 'never';
+					'retry-interval'?: number;
+				}
+			) => number;
+			remove: (widgetId: number) => void;
+			reset: (widgetId: number) => void;
+		};
+	}
 }
 
 export {};

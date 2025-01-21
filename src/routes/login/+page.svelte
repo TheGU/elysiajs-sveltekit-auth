@@ -2,13 +2,25 @@
   import { api } from '$lib/api/client';
   import { goto } from '$app/navigation';
   import { updateUser } from '$lib/stores/auth';
+  import Turnstile from '$lib/components/Turnstile.svelte';
 
   let username = '';
   let password = '';
   let error = '';
+  let turnstileToken = '';
 
   async function handleSubmit() {
-    const { data, error: resError } = await api.auth.login.post({ username, password });
+    if (!turnstileToken) {
+      error = 'Please complete the captcha';
+      return;
+    }
+
+    const { data, error: resError } = await api.auth.login.post({ 
+      username, 
+      password,
+      cfToken: turnstileToken
+    });
+    
     if (resError) error = resError || 'Login failed';
     else {
       localStorage.setItem('token', data.token);
@@ -45,6 +57,9 @@
     {#if error}
       <p class="text-red-500 text-sm">{error}</p>
     {/if}
+    <div class="my-4">
+      <Turnstile onVerify={(token) => turnstileToken = token} />
+    </div>
     <button 
       type="submit"
       class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"

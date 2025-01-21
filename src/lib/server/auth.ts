@@ -3,9 +3,23 @@ import { jwt } from '@elysiajs/jwt';
 import { hash, verify } from '@node-rs/argon2';
 import { encodeBase32LowerCase } from '@oslojs/encoding';
 import { eq } from 'drizzle-orm';
-import { JWT_SECRET } from '$env/static/private';
+import { JWT_SECRET, PRIVATE_TURNSTILE_SECRET_KEY } from '$env/static/private';
 import { db } from './db';
 import * as table from './db/schema';
+
+async function validateTurnstileToken(token: string) {
+  const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      secret: PRIVATE_TURNSTILE_SECRET_KEY,
+      response: token
+    })
+  });
+
+  const data = await response.json();
+  return data.success;
+}
 
 export const authRouter = new Elysia({ prefix: '/auth' })
   .use(
@@ -16,6 +30,11 @@ export const authRouter = new Elysia({ prefix: '/auth' })
     })
   )
   .post('/login', async ({ body, jwt, error }) => {
+    const valid = await validateTurnstileToken(body.cfToken);
+    if (!valid) {
+      return error(400, 'Invalid captcha');
+    }
+
     const { username, password } = body;
 
     const results = await db.select().from(table.user).where(eq(table.user.username, username));
@@ -45,10 +64,16 @@ export const authRouter = new Elysia({ prefix: '/auth' })
   }, {
     body: t.Object({
       username: t.String(),
-      password: t.String()
+      password: t.String(),
+      cfToken: t.String()
     })
   })
   .post('/register', async ({ body, jwt, error }) => {
+    const valid = await validateTurnstileToken(body.cfToken);
+    if (!valid) {
+      return error(400, 'Invalid captcha');
+    }
+
     const { username, password } = body;
 
     const userId = generateUserId();
@@ -75,7 +100,8 @@ export const authRouter = new Elysia({ prefix: '/auth' })
   }, {
     body: t.Object({
       username: t.String(),
-      password: t.String()
+      password: t.String(),
+      cfToken: t.String()
     })
   })
   .get('/me', async ({ headers, jwt, error }) => {
