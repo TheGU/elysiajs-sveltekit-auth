@@ -16,7 +16,21 @@ const app = new Elysia({ prefix: PUBLIC_API_PATH })
 			}
 		);
 	})
-	.use(await swagger())
+	.use(
+		await swagger({
+			documentation: {
+				components: {
+					securitySchemes: {
+						bearerAuth: {
+							type: 'http',
+							scheme: 'bearer',
+							bearerFormat: 'JWT'
+						}
+					}
+				}
+			}
+		})
+	)
 	.use(authRouter)
 	.get('/hi', () => 'Hi Elysia');
 
