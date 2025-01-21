@@ -2,6 +2,10 @@
 
 This template demonstrates how to integrate Elysia (a Bun-based backend framework) with SvelteKit. It includes authentication, database integration, and API route handling.
 
+## Demo
+
+Check out the live demo at: [https://elysiajs-sveltekit-auth.vercel.app/](https://elysiajs-sveltekit-auth.vercel.app/)
+
 ## Features
 
 - 🚀 SvelteKit frontend
@@ -95,9 +99,12 @@ export const api = treaty<App>(import.meta.env.PUBLIC_API_URL);
 Create `.env` file with necessary variables:
 
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/db"
-JWT_SECRET="your-secret-key"
-PUBLIC_API_URL="http://localhost:5173/api"
+DATABASE_URL="postgres://root:mysecretpassword@localhost:5432/svelte_elysia_auth"
+PUBLIC_API_URL=http://localhost:5173
+PUBLIC_API_PATH=/api
+JWT_SECRET=your-secret-key-that-is-at-least-32-characters
+PUBLIC_TURNSTILE_SITE_KEY=your_site_key_here
+PRIVATE_TURNSTILE_SECRET_KEY=your_secret_key_here
 ```
 
 ## Development
