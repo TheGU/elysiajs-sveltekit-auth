@@ -4,7 +4,7 @@ This template demonstrates how to integrate Elysia (a Bun-based backend framewor
 
 ## Demo
 
-Check out the live demo at: [https://elysiajs-sveltekit-auth.vercel.app/](https://elysiajs-sveltekit-auth.vercel.app/)
+Check out the live demo at: [https://elysiajs-sveltekit-auth.pattapongj.com/](https://elysiajs-sveltekit-auth.pattapongj.com/)
 
 Test login:
 
@@ -14,9 +14,9 @@ Test login:
 Or you can just register your account.
 
 Test protected page should show access denied when not login 
-[https://elysiajs-sveltekit-auth.vercel.app/profile](https://elysiajs-sveltekit-auth.vercel.app/profile)
+[https://elysiajs-sveltekit-auth.pattapongj.com/profile](https://elysiajs-sveltekit-auth.pattapongj.com/profile)
 
-Swagger API for demo: [https://elysiajs-sveltekit-auth.vercel.app/api/swagger](https://elysiajs-sveltekit-auth.vercel.app/api/swagger)
+Swagger API for demo: [https://elysiajs-sveltekit-auth.pattapongj.com/api/swagger](https://elysiajs-sveltekit-auth.pattapongj.com/api/swagger)
 
 ## Features
 
