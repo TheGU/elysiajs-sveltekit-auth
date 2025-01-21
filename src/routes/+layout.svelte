@@ -5,10 +5,13 @@
   import { onMount } from 'svelte';
   import Navbar from '$lib/components/Navbar.svelte';
   import { updateUser } from '$lib/stores/auth';
+  import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
+
   import '../app.css';
 
   let { children } = $props();
 
+  injectSpeedInsights();
   onMount(async () => {
     try {
       const userData = await api.auth.me.get().then(r => r.data);
