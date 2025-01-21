@@ -3,11 +3,13 @@
   import { goto } from '$app/navigation';
   import { updateUser } from '$lib/stores/auth';
   import Turnstile from '$lib/components/Turnstile.svelte';
+  import Spinner from '$lib/components/Spinner.svelte';
 
   let username = '';
   let password = '';
   let error = '';
   let turnstileToken = '';
+  let loading = false;
 
   async function handleSubmit() {
     if (!turnstileToken) {
@@ -15,17 +17,26 @@
       return;
     }
 
-    const { data, error: resError } = await api.auth.login.post({ 
-      username, 
-      password,
-      cfToken: turnstileToken
-    });
-    
-    if (resError) error = resError || 'Login failed';
-    else {
-      localStorage.setItem('token', data.token);
-      updateUser(data.user);
-      goto('/');
+    loading = true;
+    error = '';
+
+    try {
+      const { data, error: resError } = await api.auth.login.post({ 
+        username, 
+        password,
+        cfToken: turnstileToken
+      });
+      
+      if (resError) error = resError || 'Login failed';
+      else {
+        localStorage.setItem('token', data.token);
+        updateUser(data.user);
+        goto('/');
+      }
+    } catch (e) {
+      error = 'Login failed';
+    } finally {
+      loading = false;
     }
   }
 </script>
@@ -62,9 +73,15 @@
     </div>
     <button 
       type="submit"
-      class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+      disabled={loading}
+      class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
     >
-      Login
+      {#if loading}
+        <Spinner />
+        <span class="ml-2">Logging in...</span>
+      {:else}
+        Login
+      {/if}
     </button>
   </form>
   <p class="mt-4 text-center text-sm text-gray-600">

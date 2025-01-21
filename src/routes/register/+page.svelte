@@ -3,12 +3,14 @@
   import { goto } from '$app/navigation';
   import { updateUser } from '$lib/stores/auth';
   import Turnstile from '$lib/components/Turnstile.svelte';
+  import Spinner from '$lib/components/Spinner.svelte';
 
   let username = '';
   let password = '';
   let confirmPassword = '';
   let error = '';
   let turnstileToken = '';
+  let loading = false;
 
   async function handleSubmit() {
     if (password !== confirmPassword) {
@@ -21,6 +23,9 @@
       return;
     }
 
+    loading = true;
+    error = '';
+
     try {
       const response = await api.auth.register.post({ 
         username, 
@@ -32,6 +37,8 @@
       goto('/');
     } catch (e: any) {
       error = e.response?.data?.message || 'Registration failed';
+    } finally {
+      loading = false;
     }
   }
 </script>
@@ -79,9 +86,15 @@
     {/if}
     <button 
       type="submit"
-      class="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+      disabled={loading}
+      class="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
     >
-      Register
+      {#if loading}
+        <Spinner />
+        <span class="ml-2">Registering...</span>
+      {:else}
+        Register
+      {/if}
     </button>
   </form>
   <p class="mt-4 text-center text-sm text-gray-600">

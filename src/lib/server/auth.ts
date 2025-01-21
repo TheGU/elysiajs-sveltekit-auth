@@ -1,7 +1,6 @@
 import { Elysia, t } from 'elysia';
 import { jwt } from '@elysiajs/jwt';
-import { hash, verify } from '@node-rs/argon2';
-import { encodeBase32LowerCase } from '@oslojs/encoding';
+import bcrypt from 'bcryptjs';
 import { eq } from 'drizzle-orm';
 import { JWT_SECRET, PRIVATE_TURNSTILE_SECRET_KEY } from '$env/static/private';
 import { db } from './db';
@@ -44,7 +43,7 @@ export const authRouter = new Elysia({ prefix: '/auth' })
       return error(401, 'Invalid credentials');
     }
 
-    const validPassword = await verify(user.passwordHash, password);
+    const validPassword = await bcrypt.compare(password, user.passwordHash);
     if (!validPassword) {
       return error(401, 'Invalid credentials');
     }
@@ -76,8 +75,9 @@ export const authRouter = new Elysia({ prefix: '/auth' })
 
     const { username, password } = body;
 
-    const userId = generateUserId();
-    const passwordHash = await hash(password);
+    const userId = crypto.randomUUID();
+    const salt = await bcrypt.genSalt(12);
+    const passwordHash = await bcrypt.hash(password, salt);
 
     try {
       await db.insert(table.user).values({ id: userId, username, passwordHash });
@@ -122,9 +122,3 @@ export const authRouter = new Elysia({ prefix: '/auth' })
       username: payload.username
     };
   });
-
-function generateUserId() {
-  const bytes = crypto.getRandomValues(new Uint8Array(15));
-  const id = encodeBase32LowerCase(bytes);
-  return id;
-}

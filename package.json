@@ -56,16 +56,15 @@
 		"typescript": "^5.0.0",
 		"typescript-eslint": "^8.20.0",
 		"vite": "^5.4.11",
-		"vitest": "^2.1.8"
+		"vitest": "^2.1.8",
+		"@types/bcryptjs": "^2.4.6"
 	},
 	"dependencies": {
 		"@elysiajs/eden": "^1.2.0",
 		"@elysiajs/jwt": "^1.2.0",
 		"@elysiajs/swagger": "^1.2.0",
 		"@inlang/paraglide-sveltekit": "^0.15.5",
-		"@node-rs/argon2": "^2.0.2",
-		"@oslojs/crypto": "^1.0.1",
-		"@oslojs/encoding": "^1.1.0",
+		"bcryptjs": "^2.4.3",
 		"drizzle-orm": "^0.38.4",
 		"elysia": "^1.2.10",
 		"postgres": "^3.4.5"
