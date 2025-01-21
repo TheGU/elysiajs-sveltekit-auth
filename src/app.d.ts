@@ -15,17 +15,20 @@ declare global {
 				options: {
 					sitekey: string;
 					callback?: (token: string) => void;
+					 'error-callback'?: () => void;
 					'refresh-expired'?: 'auto' | 'manual' | 'never';
 					theme?: 'light' | 'dark' | 'auto';
 					size?: 'normal' | 'compact' | 'invisible';
 					appearance?: 'always' | 'execute' | 'interaction-only';
 					retry?: 'auto' | 'never';
 					'retry-interval'?: number;
+					domain?: string;
 				}
 			) => number;
 			remove: (widgetId: number) => void;
 			reset: (widgetId: number) => void;
 		};
+		onTurnstileLoad?: () => void;
 	}
 }
 
