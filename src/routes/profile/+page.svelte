@@ -8,16 +8,15 @@
   let loading = true;
 
   onMount(async () => {
-    try {
-      user = await api.auth.me.get().then(r => r.data);
-    } catch (e: any) {
-      error = e.response?.data?.message || 'Access Denied';
-    } finally {
-      loading = false;
+    const { data, error: rError } = await api.auth.me.get();
+    if (data) {
+      user = data;
+    } else {
+      error = rError || 'Access Denied';
     }
+    loading = false;
   });
 </script>
-
 {#if loading}
   <div class="text-center">
     <p class="text-gray-600">Loading...</p>
