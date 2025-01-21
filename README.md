@@ -6,6 +6,8 @@ This template demonstrates how to integrate Elysia (a Bun-based backend framewor
 
 Check out the live demo at: [https://elysiajs-sveltekit-auth.vercel.app/](https://elysiajs-sveltekit-auth.vercel.app/)
 
+Swagger API for demo: [https://elysiajs-sveltekit-auth.vercel.app/api/swagger](https://elysiajs-sveltekit-auth.vercel.app/api/swagger)
+
 ## Features
 
 - 🚀 SvelteKit frontend
